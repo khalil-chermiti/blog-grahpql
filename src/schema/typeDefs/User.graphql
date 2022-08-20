@@ -1,0 +1,22 @@
+type User {
+  id: ID!
+  name: String!
+  email: String!
+  age: Int!
+  posts: [Post]
+}
+
+type Query {
+  getUser(id: String!): User!
+}
+
+type Mutation {
+  createUser(userData: CreateUserInput): User!
+  deleteUser(id: ID!): User!
+}
+
+input CreateUserInput {
+  name: String!
+  email: String!
+  age: Int
+}
