@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { Database, Post, User, UserInput } from "../../types";
+import { Database, Post, User, UserInput, UpdateUserInput } from "../../types";
 
 export default {
   Query: {
@@ -56,6 +56,37 @@ export default {
       db.comments = db.comments.filter(comment => comment.userId != args.id);
 
       return deletedUser[0];
+    },
+
+    updateUser: (
+      parent: unknown,
+      args: UpdateUserInput,
+      context: { db: Database },
+      info: unknown
+    ): User => {
+      const { db } = context;
+      const user = db.users.find(user => user.id === args.id);
+
+      if (!user) throw new Error("user not found");
+
+      if (typeof args.data.email === "string") {
+        const emailTaken = db.users.some(
+          user => user.email === args.data.email
+        );
+
+        if (emailTaken) throw new Error("email is taken");
+        user.email = args.data.email;
+      }
+
+      if (typeof args.data.name === "string") {
+        user.name = args.data.name;
+      }
+
+      if (typeof args.data.age !== "undefined") {
+        user.age = args.data.age;
+      }
+
+      return user;
     },
   },
 

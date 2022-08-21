@@ -1,4 +1,4 @@
-import {Post , User , Comment} from '../types';
+import { Post, User, Comment } from "../types";
 
 let users: User[] = [
   {
@@ -7,6 +7,13 @@ let users: User[] = [
     email: "khalil@gmail.com",
     age: 20,
     posts: ["1"],
+  },
+  {
+    id: "2",
+    name: "wissem",
+    email: "wissem@gmail.com",
+    age: 20,
+    posts: ["2"],
   },
 ];
 
@@ -18,6 +25,13 @@ let posts: Post[] = [
     author: "1",
     published: true,
   },
+  {
+    id: "2",
+    title: "nodejs",
+    content: "nodejs is awesome",
+    author: "2",
+    published: true,
+  },
 ];
 
 let comments: Comment[] = [
@@ -27,12 +41,18 @@ let comments: Comment[] = [
     userId: "1",
     content: "like graphql",
   },
+  {
+    id: "2",
+    postId: "2",
+    userId: "2",
+    content: "like nodejs",
+  },
 ];
 
 const db = {
-  posts ,
-  users , 
-  comments ,
-}
+  posts,
+  users,
+  comments,
+};
 
-export default {db : db} ;
+export default { db: db };

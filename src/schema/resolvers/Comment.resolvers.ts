@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { User, Database, CommentInput, Comment } from "../../types";
+import { User, Database, CommentInput, Comment, UpdateCommentInput } from "../../types";
 
 export default {
   Query: {
@@ -54,6 +54,7 @@ export default {
 
       return comment;
     },
+
     deleteComment: (
       parent: unknown,
       args: { id: "string" },
@@ -72,6 +73,23 @@ export default {
 
       return comment[0];
     },
+
+    updateComment: (
+      parent: unknown,
+      args: UpdateCommentInput,
+      context: { db: Database }
+    ) : Comment => {
+      const {db} = context; 
+      const comment = db.comments.find(comment => comment.id === args.id);
+
+      if (!comment) throw new Error("comment not found") ;
+
+      if (typeof args.data.content === "string") {
+        comment.content = args.data.content ;
+      }
+
+      return comment;
+    }
   },
 
   Comment: {

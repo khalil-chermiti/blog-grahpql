@@ -29,6 +29,15 @@ export type UserInput = {
   };
 };
 
+export type UpdateUserInput = {
+  id: String;
+  data: {
+    name?: String;
+    email?: String;
+    age?: number;
+  };
+};
+
 export type PostInput = {
   postData: {
     title: string;
@@ -38,10 +47,26 @@ export type PostInput = {
   };
 };
 
+export type UpdatePostInput = {
+  id: string;
+  data: {
+    title: string;
+    content: string;
+    published: boolean;
+  };
+};
+
 export type CommentInput = {
   commentData: {
     userId: string;
     postId: string;
+    content: string;
+  };
+};
+
+export type UpdateCommentInput = {
+  id: string;
+  data: {
     content: string;
   };
 };

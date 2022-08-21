@@ -14,10 +14,15 @@ type Query {
 type Mutation {
   createComment(commentData: CreateCommentInput): Comment!
   deleteComment(id: ID!): Comment!
+  updateComment(id: String! , data: UpdateCommentInput!): Comment!
 }
 
 input CreateCommentInput {
   content: String!
   userId: String!
   postId: String!
+}
+
+input UpdateCommentInput {
+  content: String!
 }
