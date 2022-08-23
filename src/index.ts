@@ -22,7 +22,7 @@ const server = createServer({
     typeDefs,
     resolvers,
   },
-  context: { db , pubSub },
+  context: { db, pubSub },
   maskedErrors: false,
 });
 server.start();

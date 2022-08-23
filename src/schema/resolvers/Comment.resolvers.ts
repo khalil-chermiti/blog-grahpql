@@ -1,11 +1,11 @@
 import { randomUUID } from "crypto";
-import { PubSubTypes } from "../../types";
 import { PubSub } from "@graphql-yoga/node";
 import {
   User,
   Database,
   CommentInput,
   Comment,
+  PubSubTypes,
   UpdateCommentInput,
 } from "../../types";
 
@@ -119,7 +119,7 @@ export default {
         // subscribe to specific post comments change events
         return pubSub.subscribe("postId:comment", args.postId);
       },
-      resolve: (payload: unknown) => payload,
+      resolve: (payload: Comment) => payload,
     },
   },
 
