@@ -1,10 +1,11 @@
 import path from "path";
 import db from "./model/db";
+import pubSub from "./schema/pubSub";
 import { createServer } from "@graphql-yoga/node";
 import { loadFilesSync } from "@graphql-tools/load-files";
 import { mergeResolvers, mergeTypeDefs } from "@graphql-tools/merge";
 
-// load and merge graphql type definitions 
+// load and merge graphql type definitions
 const loadedTypeFiles = loadFilesSync(
   `${__dirname}/schema/typeDefs/**/*.graphql`
 );
@@ -21,6 +22,9 @@ const server = createServer({
     typeDefs,
     resolvers,
   },
-  context: db,
+  context: { db , pubSub },
+  maskedErrors: false,
 });
 server.start();
+
+export default pubSub;

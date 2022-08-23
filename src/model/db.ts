@@ -55,4 +55,4 @@ const db = {
   comments,
 };
 
-export default { db: db };
+export default db;

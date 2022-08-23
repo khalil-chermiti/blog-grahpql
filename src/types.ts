@@ -76,3 +76,9 @@ export type Database = {
   posts: Post[];
   comments: Comment[];
 };
+
+// types of subs
+export type PubSubTypes = {
+  count: [number];
+  "postId:comment": [postId: string, comment: Comment];
+};

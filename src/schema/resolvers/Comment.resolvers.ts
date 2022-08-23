@@ -1,5 +1,13 @@
 import { randomUUID } from "crypto";
-import { User, Database, CommentInput, Comment, UpdateCommentInput } from "../../types";
+import { PubSubTypes } from "../../types";
+import { PubSub } from "@graphql-yoga/node";
+import {
+  User,
+  Database,
+  CommentInput,
+  Comment,
+  UpdateCommentInput,
+} from "../../types";
 
 export default {
   Query: {
@@ -25,9 +33,9 @@ export default {
     createComment: (
       parent: unknown,
       args: CommentInput,
-      context: { db: Database }
+      context: { db: Database; pubSub: PubSub<PubSubTypes> }
     ): Comment => {
-      const { db } = context;
+      const { db, pubSub } = context;
 
       // find user
       const foundAuthor = db.users.some(
@@ -51,6 +59,8 @@ export default {
       };
 
       db.comments.push(comment);
+
+      pubSub.publish("postId:comment", args.commentData.postId, comment);
 
       return comment;
     },
@@ -78,18 +88,39 @@ export default {
       parent: unknown,
       args: UpdateCommentInput,
       context: { db: Database }
-    ) : Comment => {
-      const {db} = context; 
+    ): Comment => {
+      const { db } = context;
       const comment = db.comments.find(comment => comment.id === args.id);
 
-      if (!comment) throw new Error("comment not found") ;
+      if (!comment) throw new Error("comment not found");
 
       if (typeof args.data.content === "string") {
-        comment.content = args.data.content ;
+        comment.content = args.data.content;
       }
 
       return comment;
-    }
+    },
+  },
+
+  Subscription: {
+    comment: {
+      subscribe: (
+        parent: unknown,
+        args: { postId: string },
+        context: { db: Database; pubSub: PubSub<PubSubTypes> }
+      ) => {
+        const { db, pubSub } = context;
+        const post = db.posts.find(
+          post => post.id === args.postId && post.published
+        );
+
+        if (!post) throw new Error("post not found");
+
+        // subscribe to specific post comments change events
+        return pubSub.subscribe("postId:comment", args.postId);
+      },
+      resolve: (payload: unknown) => payload,
+    },
   },
 
   Comment: {
