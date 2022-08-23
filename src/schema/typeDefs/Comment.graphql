@@ -22,7 +22,7 @@ type Subscription {
 }
 
 type CommentSubscriptionPayload {
-  mutation: String!
+  mutation: MutationType!
   data: Comment!
 }
 
