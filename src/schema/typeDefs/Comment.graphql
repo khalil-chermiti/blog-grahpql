@@ -14,11 +14,16 @@ type Query {
 type Mutation {
   createComment(commentData: CreateCommentInput): Comment!
   deleteComment(id: ID!): Comment!
-  updateComment(id: String! , data: UpdateCommentInput!): Comment!
+  updateComment(id: String!, data: UpdateCommentInput!): Comment!
 }
 
 type Subscription {
-  comment(postId: ID!): Comment!
+  comment(postId: ID!): CommentSubscriptionPayload!
+}
+
+type CommentSubscriptionPayload {
+  mutation: String!
+  data: Comment!
 }
 
 input CreateCommentInput {

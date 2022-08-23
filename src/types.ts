@@ -79,12 +79,16 @@ export type Database = {
 
 // types of subs
 export type PubSubTypes = {
-  count: [number];
-  "postId:comment": [postId: string, comment: Comment];
   post: [PostSubscriptionPayload];
+  "postId:comment": [postId: string, comment: CommentSubscriptionPayload];
 };
 
 export type PostSubscriptionPayload = {
   mutation: "CREATED" | "DELETED" | "UPDATED";
   data: Post;
+};
+
+export type CommentSubscriptionPayload = {
+  mutation: "CREATED" | "DELETED" | "UPDATED";
+  data: Comment;
 };

@@ -60,7 +60,10 @@ export default {
 
       db.comments.push(comment);
 
-      pubSub.publish("postId:comment", args.commentData.postId, comment);
+      pubSub.publish("postId:comment", args.commentData.postId, {
+        mutation: "CREATED",
+        data: comment,
+      });
 
       return comment;
     },
@@ -68,7 +71,7 @@ export default {
     deleteComment: (
       parent: unknown,
       args: { id: "string" },
-      context: { db: Database }
+      context: { db: Database; pubSub: PubSub<PubSubTypes> }
     ): Comment => {
       const { db } = context;
 
@@ -81,13 +84,18 @@ export default {
       const comment = db.comments.splice(commentIndex, 1);
       db.comments = db.comments.filter(comment => comment.id != args.id);
 
+      context.pubSub.publish("postId:comment", args.id, {
+        mutation: "DELETED",
+        data: comment[0],
+      });
+
       return comment[0];
     },
 
     updateComment: (
       parent: unknown,
       args: UpdateCommentInput,
-      context: { db: Database }
+      context: { db: Database; pubSub: PubSub<PubSubTypes> }
     ): Comment => {
       const { db } = context;
       const comment = db.comments.find(comment => comment.id === args.id);
@@ -97,6 +105,11 @@ export default {
       if (typeof args.data.content === "string") {
         comment.content = args.data.content;
       }
+
+      context.pubSub.publish("postId:comment", comment.postId, {
+        mutation: "UPDATED",
+        data: comment,
+      });
 
       return comment;
     },
