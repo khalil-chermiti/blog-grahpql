@@ -1,0 +1,55 @@
+version: "3.9"
+
+services:
+  blog-app:
+    restart: always
+    container_name: blog_app
+    command: "yarn start:dev"
+    build:
+      context: ./
+      target: dev-bind
+    environment:
+      ENV: development
+      PORT: 3000
+      DB_URL: postgresql://root:root@database:5432/blog
+    volumes:
+      - .:/app
+    ports:
+      - "3000:3000"
+    networks:
+      - blog_network
+    depends_on:
+      - database
+      - adminer
+
+  database:
+    container_name: postgres
+    image: postgres:14.5-alpine
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5432:5432"
+    networks:
+      - blog_network
+
+  adminer:
+    container_name: adminer
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: root@mail.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - 82:80
+    volumes:
+      - db-volume:/var/lib/postgresql/data
+    networks:
+      - blog_network
+
+volumes:
+  db-volume:
+
+
+networks:
+  blog_network:
