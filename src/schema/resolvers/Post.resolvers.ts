@@ -15,7 +15,7 @@ export default {
   Query: {
     getPosts: (
       parent: unknown,
-      args: { commentId: String },
+      args: { commentId: string },
       context: { db: Database }
     ): Post[] => {
       return context.db.posts;
@@ -51,7 +51,7 @@ export default {
         id: randomUUID(),
         title: args.postData.title,
         content: args.postData.content,
-        author: foundAuthor.id,
+        authorId: foundAuthor.id,
         published: args.postData.published,
       };
 
@@ -166,7 +166,7 @@ export default {
     },
 
     comments: (
-      parent: { id: String },
+      parent: { id: string },
       args: {},
       context: { db: Database }
     ): Comment[] => {

@@ -5,14 +5,12 @@ let users: User[] = [
     id: "1",
     name: "khalil",
     email: "khalil@gmail.com",
-    age: 20,
     posts: ["1"],
   },
   {
     id: "2",
     name: "wissem",
     email: "wissem@gmail.com",
-    age: 20,
     posts: ["2"],
   },
 ];
@@ -22,14 +20,14 @@ let posts: Post[] = [
     id: "1",
     title: "graphql",
     content: "graphql is awesome",
-    author: "1",
+    authorId: "1",
     published: true,
   },
   {
     id: "2",
     title: "nodejs",
     content: "nodejs is awesome",
-    author: "2",
+    authorId: "2",
     published: true,
   },
 ];

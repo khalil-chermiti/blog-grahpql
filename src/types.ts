@@ -1,14 +1,13 @@
 export type User = {
   id: string;
-  name: string;
+  name: string | null;
   email: string;
-  age: number;
   posts?: [string];
 };
 
 export type Post = {
   id: string;
-  author: String;
+  authorId: string;
   title: string;
   content: string;
   published: boolean;
@@ -25,16 +24,14 @@ export type UserInput = {
   userData: {
     name: string;
     email: string;
-    age: number;
   };
 };
 
 export type UpdateUserInput = {
-  id: String;
+  id: string;
   data: {
-    name?: String;
-    email?: String;
-    age?: number;
+    name?: string;
+    email?: string;
   };
 };
 

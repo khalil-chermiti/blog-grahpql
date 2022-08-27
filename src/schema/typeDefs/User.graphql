@@ -2,28 +2,25 @@ type User {
   id: ID!
   name: String!
   email: String!
-  age: Int!
   posts: [Post]
 }
 
 type Query {
-  getUser(id: String!): User!
+  getUser(id: String!): User
 }
 
 type Mutation {
-  createUser(userData: CreateUserInput): User!
-  deleteUser(id: ID!): User!
-  updateUser(id: String!, data: UpdateUserInput!): User!
+  createUser(userData: CreateUserInput): User
+  deleteUser(id: ID!): User
+  updateUser(id: String!, data: UpdateUserInput!): User
 }
 
 input CreateUserInput {
   name: String!
   email: String!
-  age: Int
 }
 
 input UpdateUserInput {
   name: String
   email: String
-  age: Int
 }

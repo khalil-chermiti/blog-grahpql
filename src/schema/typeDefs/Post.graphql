@@ -8,14 +8,14 @@ type Post {
 }
 
 type Query {
-  getPost(postId: String!): Post!
-  getPosts: [Post]!
+  getPost(postId: String!): Post
+  getPosts: [Post]
 }
 
 type Mutation {
-  createPost(postData: CreatePostInput): Post!
-  deletePost(id: ID!): Post!
-  updatePost(id: String!, data: UpdatePostInput!): Post!
+  createPost(postData: CreatePostInput): Post
+  deletePost(id: ID!): Post
+  updatePost(id: String!, data: UpdatePostInput!): Post
 }
 
 input CreatePostInput {
@@ -32,7 +32,7 @@ input UpdatePostInput {
 }
 
 type Subscription {
-  post: PostSubscritptionPayload!
+  post: PostSubscritptionPayload
 }
 
 type PostSubscritptionPayload {

@@ -21,7 +21,7 @@ export default {
 
     getComment: (
       parent: unknown,
-      args: { commentId: String },
+      args: { commentId: string },
       context: { db: Database }
     ): Comment | undefined => {
       const { db } = context;
