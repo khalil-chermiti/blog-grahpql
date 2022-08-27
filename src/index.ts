@@ -1,6 +1,7 @@
 import path from "path";
 import db from "./model/db";
 import pubSub from "./schema/pubSub";
+import prisma from "./services/prisma.service";
 import { createServer } from "@graphql-yoga/node";
 import { loadFilesSync } from "@graphql-tools/load-files";
 import { mergeResolvers, mergeTypeDefs } from "@graphql-tools/merge";
@@ -25,6 +26,17 @@ const server = createServer({
   context: { db, pubSub },
   maskedErrors: false,
 });
-server.start();
 
-export default pubSub;
+async function startServer() {
+  await prisma
+    .$connect()
+    .then(
+      () => console.log("connected to postgresql 🐘✨✨"),
+      () => console.log("could not connect to postgresql 🛟")
+    )
+    .catch(err => console.log("error connecting to database", err));
+
+  server.start();
+}
+
+startServer();
