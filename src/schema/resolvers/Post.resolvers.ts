@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import prisma from "../../services/prisma.service";
 import { PubSub, Repeater } from "@graphql-yoga/node";
 import {
   User,
@@ -13,37 +14,32 @@ import {
 
 export default {
   Query: {
-    getPosts: (
+    getPosts: async (
       parent: unknown,
       args: { commentId: string },
-      context: { db: Database }
-    ): Post[] => {
-      return context.db.posts;
+      context: {}
+    ): Promise<Post[]> => {
+      return await prisma.post.findMany({ take: 5 });
     },
 
-    getPost: (
+    getPost: async (
       parent: unknown,
       args: { postId: string },
-      context: { db: Database }
-    ): Post | [] => {
-      const { db } = context;
-
-      const post = db.posts.find(post => post?.id === args.postId);
-      return post ? post : [];
+      context: {}
+    ): Promise<Post | null> => {
+      return await prisma.post.findUnique({ where: { id: args.postId } });
     },
   },
 
   Mutation: {
-    createPost: (
+    createPost: async (
       parent: unknown,
       args: PostInput,
-      context: { db: Database; pubSub: PubSub<PubSubTypes> }
-    ): Post => {
-      const { db } = context;
-
-      const foundAuthor = db.users.find(
-        user => user.name === args.postData.author
-      );
+      context: { pubSub: PubSub<PubSubTypes> }
+    ): Promise<Post> => {
+      const foundAuthor = await prisma.user.findUnique({
+        where: { id: args.postData.author },
+      });
 
       if (!foundAuthor) throw new Error("author does not exist");
 
@@ -55,9 +51,9 @@ export default {
         published: args.postData.published,
       };
 
-      db.posts.push(post);
+      const createdPost = await prisma.post.create({ data: post });
 
-      if (post.published) {
+      if (createdPost.published) {
         context.pubSub.publish("post", {
           mutation: "CREATED",
           data: post,
@@ -67,77 +63,83 @@ export default {
       return post;
     },
 
-    deletePost: (
+    deletePost: async (
       parent: unknown,
       args: { id: "string" },
-      context: { db: Database; pubSub: PubSub<PubSubTypes> }
-    ): Post => {
-      const { db } = context;
+      context: { pubSub: PubSub<PubSubTypes> }
+    ): Promise<Post> => {
+      const postToDelete = await prisma.post.findUnique({
+        where: { id: args.id },
+      });
+      if (!postToDelete) throw new Error("post not found");
 
-      const postIndex = db.posts.findIndex(post => post.id === args.id);
+      await prisma.comment.deleteMany({ where: { postId: args.id } });
+      await prisma.post.delete({ where: { id: args.id } });
 
-      if (postIndex < 0) throw new Error("post not found");
-
-      const post = db.posts.splice(postIndex, 1);
-      db.comments = db.comments.filter(comment => comment.postId != args.id);
-
-      if (post[0].published) {
+      // if post is published we need to inform subscribers that
+      // post got deleted
+      if (postToDelete.published) {
         context.pubSub.publish("post", {
           mutation: "DELETED",
-          data: post[0],
+          data: postToDelete,
         });
       }
 
-      return post[0];
+      return postToDelete;
     },
 
-    updatePost: (
+    updatePost: async (
       parent: unknown,
       args: UpdatePostInput,
-      context: { db: Database; pubSub: PubSub<PubSubTypes> }
-    ): Post => {
-      const { db } = context;
-      const post = db.posts.find(post => post.id === args.id);
+      context: { pubSub: PubSub<PubSubTypes> }
+    ): Promise<Post> => {
+      const postToUpdate = await prisma.post.findUnique({
+        where: { id: args.id },
+      });
+      if (!postToUpdate) throw new Error("post not found");
 
-      if (!post) throw new Error("post not found");
-
-      const originalPost = { ...post };
+      const originalPost = { ...postToUpdate };
 
       if (typeof args.data.title === "string") {
-        post.title = args.data.title;
+        postToUpdate.title = args.data.title;
       }
 
       if (typeof args.data.content === "string") {
-        post.content = args.data.content;
+        postToUpdate.content = args.data.content;
       }
 
       if (typeof args.data.published === "boolean") {
-        post.published = args.data.published;
+        postToUpdate.published = args.data.published;
 
         // publishing the post update specifying type
 
-        if (originalPost.published && !post.published) {
+        if (originalPost.published && !postToUpdate.published) {
           // in this case we can assume that post is marked as not published
+
           context.pubSub.publish("post", {
             mutation: "DELETED",
             data: originalPost, // return original data not the edited
           });
-        } else if (!originalPost.published && post.published) {
+        } else if (!originalPost.published && postToUpdate.published) {
           // post is now published
           context.pubSub.publish("post", {
             mutation: "CREATED",
-            data: post,
+            data: postToUpdate,
           });
         }
-      } else if (post.published) {
+      } else if (postToUpdate.published) {
         // update
         context.pubSub.publish("post", {
           mutation: "UPDATED",
-          data: post,
+          data: postToUpdate,
         });
       }
 
-      return post;
+      // after publishing the update we save the new object to db
+      return await prisma.post.update({
+        where: { id: args.id },
+        data: postToUpdate,
+      });
     },
   },
 
@@ -146,7 +148,7 @@ export default {
       subscribe: (
         parent: unknown,
         args: { postId: string },
-        context: { db: Database; pubSub: PubSub<PubSubTypes> }
+        context: { pubSub: PubSub<PubSubTypes> }
       ): Repeater<PostSubscriptionPayload> => {
         return context.pubSub.subscribe("post");
       },
@@ -155,29 +157,20 @@ export default {
   },
 
   Post: {
-    author: (
-      parent: { author: string },
+    author: async (
+      parent: { authorId: string },
       args: {},
-      context: { db: Database }
-    ): User | undefined => {
-      const { db } = context;
-
-      return db.users.find(user => user.id === parent.author);
+      context: {}
+    ): Promise<User | null> => {
+      return await prisma.user.findUnique({ where: { id: parent.authorId } });
     },
 
-    comments: (
+    comments: async (
       parent: { id: string },
       args: {},
       context: { db: Database }
-    ): Comment[] => {
-      const { db } = context;
-
-      const commentsArray: Comment[] = [];
-      db.comments.forEach(comment => {
-        if (comment.postId === parent.id) commentsArray.push(comment);
-      });
-
-      return commentsArray;
+    ): Promise<Comment[]> => {
+      return await prisma.comment.findMany({ where: { postId: parent.id } });
     },
   },
 };
