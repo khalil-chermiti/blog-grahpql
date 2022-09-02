@@ -2,25 +2,45 @@ type User {
   id: ID!
   name: String!
   email: String!
+  password: String!
   posts: [Post]
 }
 
 type Query {
-  getUser(id: String!): User
+  getUser(id: String!): UserData
 }
 
 type Mutation {
-  createUser(userData: CreateUserInput): User
-  deleteUser(id: ID!): User
-  updateUser(id: String!, data: UpdateUserInput!): User
+  createUser(userData: CreateUserInput): AuthPayload
+  deleteUser(id: ID!): UserData
+  updateUser(id: String!, data: UpdateUserInput!): UserData
+}
+
+type AuthPayload {
+  token: String!
+  data: UserData!
+}
+
+type UserData {
+  id: ID!
+  name: String!
+  email: String!
+  posts: [Post]
 }
 
 input CreateUserInput {
   name: String!
   email: String!
+  password: String!
 }
 
 input UpdateUserInput {
   name: String
   email: String
 }
+
+# authPayload
+# user data
+
+# get user data on login
+# we must not leak auth informations to the outside world at all

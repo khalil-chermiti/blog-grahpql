@@ -1,8 +1,15 @@
+import { JwtPayload } from "jsonwebtoken";
+
 export type User = {
   id: string;
-  name: string | null;
+  name: string;
   email: string;
   posts?: [string];
+};
+
+export type AuthPayload = {
+  data: User;
+  token: string;
 };
 
 export type Post = {
@@ -24,6 +31,7 @@ export type UserInput = {
   userData: {
     name: string;
     email: string;
+    password: string;
   };
 };
 
@@ -89,3 +97,13 @@ export type CommentSubscriptionPayload = {
   mutation: "CREATED" | "DELETED" | "UPDATED";
   data: Comment;
 };
+
+// declaring types for process.env
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv {
+      JWT_SECRET: string;
+      DATABASE_URL: string;
+    }
+  }
+}

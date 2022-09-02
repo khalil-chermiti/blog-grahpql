@@ -1,6 +1,14 @@
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { randomUUID } from "crypto";
 import prisma from "../../services/prisma.service";
-import { Post, User, UserInput, UpdateUserInput } from "../../types";
+import {
+  Post,
+  User,
+  UserInput,
+  UpdateUserInput,
+  AuthPayload,
+} from "../../types";
 
 export default {
   Query: {
@@ -18,20 +26,39 @@ export default {
       parent: unknown,
       args: UserInput,
       context: {}
-    ): Promise<User> => {
+    ): Promise<AuthPayload> => {
       const isEmailTaken = await prisma.user.findUnique({
         where: { email: args.userData.email },
       });
 
       if (isEmailTaken) throw new Error("email is taken");
 
-      const user: User = {
+      if (
+        args.userData.password.length < 6 ||
+        typeof args.userData.password !== "string"
+      ) {
+        throw new Error("please enter a valid password");
+      }
+
+      const user = {
         id: randomUUID(),
         name: args.userData.name,
         email: args.userData.email,
       };
 
-      return await prisma.user.create({ data: user });
+      // hash password
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(args.userData.password, salt);
+
+      // save user
+      await prisma.user.create({
+        data: { ...user, password: hashedPassword },
+      });
+
+      return {
+        data: user,
+        token: jwt.sign({ userId: user.id }, process.env.JWT_SECRET),
+      };
     },
 
     deleteUser: async (

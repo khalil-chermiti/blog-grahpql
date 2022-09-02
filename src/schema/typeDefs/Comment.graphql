@@ -3,7 +3,7 @@ type Comment {
   userId: String!
   postId: String!
   content: String!
-  user: User!
+  user: UserData!
 }
 
 type Query {
