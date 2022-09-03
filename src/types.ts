@@ -33,6 +33,13 @@ export type UserInput = {
   };
 };
 
+export type UserLoginInput = {
+  loginData : {
+    email: string ;
+    password: string;
+  }
+}
+
 export type UpdateUserInput = {
   data: {
     name?: string;

@@ -8,6 +8,7 @@ import {
   UserInput,
   UpdateUserInput,
   AuthPayload,
+  UserLoginInput,
 } from "../../types";
 import { getUserId } from "../../utils/getUserId";
 import { GraphQLError } from "graphql";
@@ -20,6 +21,40 @@ export default {
       context: {}
     ): Promise<User | null> => {
       return await prisma.user.findUnique({ where: { id: args.id } });
+    },
+
+    login: async (
+      parent: unknown,
+      args: UserLoginInput,
+      context: { request: Request }
+    ): Promise<AuthPayload | null> => {
+      let jwtPayload = getUserId(context.request);
+      if (jwtPayload) throw new GraphQLError("already logged in!");
+
+      const user = await prisma.user.findUnique({
+        where: { email: args.loginData.email },
+      });
+
+      if (!user)
+        throw new GraphQLError("invalid email , please verify your login");
+
+      const validLogin = await bcrypt.compare(
+        args.loginData.password,
+        user.password
+      );
+
+      if (!validLogin) {
+        throw new GraphQLError("wrong password !");
+      }
+
+      return {
+        data: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        },
+        token: jwt.sign({ userId: user.id }, process.env.JWT_SECRET),
+      };
     },
   },
 
@@ -72,7 +107,7 @@ export default {
       let jwtPayload = getUserId(context.request);
 
       if (!jwtPayload)
-        throw new GraphQLError("unallowed action, please login !");
+        throw new GraphQLError("not allowed action, please login !");
 
       const userToDelete = await prisma.user.findUnique({
         where: { id: jwtPayload.userId },

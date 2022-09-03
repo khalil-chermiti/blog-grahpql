@@ -8,6 +8,7 @@ type User {
 
 type Query {
   getUser(id: String!): UserData
+  login(loginData: UserLoginInput!): AuthPayload
 }
 
 type Mutation {
@@ -39,8 +40,7 @@ input UpdateUserInput {
   email: String
 }
 
-# authPayload
-# user data
-
-# get user data on login
-# we must not leak auth informations to the outside world at all
+input UserLoginInput {
+  email: String!
+  password: String!
+}

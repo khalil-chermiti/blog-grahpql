@@ -1,4 +1,3 @@
-import { GraphQLError } from "graphql";
 import jwt, { JwtPayload, Secret } from "jsonwebtoken";
 
 interface UserJwtToken extends JwtPayload {
@@ -10,7 +9,7 @@ export const getUserId = (request: Request): UserJwtToken | null => {
     request.headers.get("Authorization") ||
     request.headers.get("authorization");
 
-  if (!jwtToken) throw new GraphQLError("unallowed action, please login !");
+  if (!jwtToken) return null;
 
   jwtToken = jwtToken.split(" ")[1];
   const secret: Secret = process.env.JWT_SECRET;
