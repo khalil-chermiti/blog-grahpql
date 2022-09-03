@@ -9,6 +9,8 @@ import {
   UpdateCommentInput,
   CommentSubscriptionPayload,
 } from "../../types";
+import { getUserId } from "../../utils/getUserId";
+import { GraphQLError } from "graphql";
 
 export default {
   Query: {
@@ -38,27 +40,30 @@ export default {
     createComment: async (
       parent: {},
       args: CommentInput,
-      context: { pubSub: PubSub<PubSubTypes> }
-    ): Promise<Comment> => {
+      context: { pubSub: PubSub<PubSubTypes>; request: Request }
+    ): Promise<Comment | null> => {
+      const jwtPayload = getUserId(context.request);
+      if (!jwtPayload) throw new GraphQLError("please sign in !");
+
       const { pubSub } = context;
 
       const user = await prisma.user.findUnique({
-        where: { id: args.commentData.userId },
+        where: { id: jwtPayload.userId },
       });
 
-      if (!user) throw new Error("user does not exist");
+      if (!user) throw new GraphQLError("user does not exist");
 
       const post = await prisma.post.findUnique({
         where: { id: args.commentData.postId },
       });
 
-      if (!post) throw new Error("post does not exist");
+      if (!post) throw new GraphQLError("post does not exist");
 
       // if exit add Comment
 
       const comment: Comment = {
         id: randomUUID(),
-        userId: args.commentData.userId,
+        userId: jwtPayload.userId,
         postId: args.commentData.postId,
         content: args.commentData.content,
       };
@@ -76,43 +81,63 @@ export default {
     deleteComment: async (
       parent: {},
       args: { id: "string" },
-      context: { pubSub: PubSub<PubSubTypes> }
+      context: { pubSub: PubSub<PubSubTypes>; request: Request }
     ): Promise<Comment> => {
-      const comment = await prisma.comment.delete({ where: { id: args.id } });
+      const jwtPayload = getUserId(context.request);
+      if (!jwtPayload) throw new GraphQLError("please sign in !");
 
-      context.pubSub.publish("postId:comment", args.id, {
-        mutation: "DELETED",
-        data: comment,
+      const commentToDelete = await prisma.comment.findUnique({
+        where: { id: args.id },
       });
 
-      return comment;
+      if (!commentToDelete) throw new GraphQLError("comment not found");
+
+      if (commentToDelete.userId === jwtPayload.userId) {
+        const comment = await prisma.comment.delete({ where: { id: args.id } });
+        context.pubSub.publish("postId:comment", args.id, {
+          mutation: "DELETED",
+          data: comment,
+        });
+
+        return comment;
+      } else {
+        throw new Error("can't delete comment !");
+      }
     },
 
     updateComment: async (
       parent: {},
       args: UpdateCommentInput,
-      context: { pubSub: PubSub<PubSubTypes> }
+      context: { pubSub: PubSub<PubSubTypes>; request: Request }
     ): Promise<Comment> => {
+      const jwtPayload = getUserId(context.request);
+      if (!jwtPayload) throw new GraphQLError("please sign in !");
+
       const commentToUpdate = await prisma.comment.findUnique({
         where: { id: args.id },
       });
-      if (!commentToUpdate) throw new Error("comment not found");
 
-      if (typeof args.data.content === "string") {
-        commentToUpdate.content = args.data.content;
+      if (!commentToUpdate) throw new GraphQLError("comment not found");
+
+      if (commentToUpdate.userId === jwtPayload.userId) {
+        if (typeof args.data.content === "string") {
+          commentToUpdate.content = args.data.content;
+        }
+
+        await prisma.comment.update({
+          where: { id: args.id },
+          data: commentToUpdate,
+        });
+
+        context.pubSub.publish("postId:comment", commentToUpdate.postId, {
+          mutation: "UPDATED",
+          data: commentToUpdate,
+        });
+
+        return commentToUpdate;
+      } else {
+        throw new GraphQLError("can't update comment !");
       }
-
-      await prisma.comment.update({
-        where: { id: args.id },
-        data: commentToUpdate,
-      });
-
-      context.pubSub.publish("postId:comment", commentToUpdate.postId, {
-        mutation: "UPDATED",
-        data: commentToUpdate,
-      });
-
-      return commentToUpdate;
     },
   },
 

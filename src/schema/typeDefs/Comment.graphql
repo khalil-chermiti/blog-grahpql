@@ -28,7 +28,6 @@ type CommentSubscriptionPayload {
 
 input CreateCommentInput {
   content: String!
-  userId: String!
   postId: String!
 }
 

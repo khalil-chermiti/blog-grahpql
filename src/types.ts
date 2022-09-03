@@ -34,11 +34,11 @@ export type UserInput = {
 };
 
 export type UserLoginInput = {
-  loginData : {
-    email: string ;
+  loginData: {
+    email: string;
     password: string;
-  }
-}
+  };
+};
 
 export type UpdateUserInput = {
   data: {
@@ -66,7 +66,6 @@ export type UpdatePostInput = {
 
 export type CommentInput = {
   commentData: {
-    userId: string;
     postId: string;
     content: string;
   };
