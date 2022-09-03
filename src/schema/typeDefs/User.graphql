@@ -12,8 +12,8 @@ type Query {
 
 type Mutation {
   createUser(userData: CreateUserInput): AuthPayload
-  deleteUser(id: ID!): UserData
-  updateUser(id: String!, data: UpdateUserInput!): UserData
+  deleteUser: UserData
+  updateUser(data: UpdateUserInput!): UserData
 }
 
 type AuthPayload {

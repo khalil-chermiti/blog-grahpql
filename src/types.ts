@@ -1,5 +1,3 @@
-import { JwtPayload } from "jsonwebtoken";
-
 export type User = {
   id: string;
   name: string;
@@ -36,7 +34,6 @@ export type UserInput = {
 };
 
 export type UpdateUserInput = {
-  id: string;
   data: {
     name?: string;
     email?: string;

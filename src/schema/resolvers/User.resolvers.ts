@@ -9,6 +9,8 @@ import {
   UpdateUserInput,
   AuthPayload,
 } from "../../types";
+import { getUserId } from "../../utils/getUserId";
+import { GraphQLError } from "graphql";
 
 export default {
   Query: {
@@ -31,13 +33,14 @@ export default {
         where: { email: args.userData.email },
       });
 
-      if (isEmailTaken) throw new Error("email is taken");
+      if (isEmailTaken)
+        throw new GraphQLError("email is taken, verify your login!");
 
       if (
         args.userData.password.length < 6 ||
         typeof args.userData.password !== "string"
       ) {
-        throw new Error("please enter a valid password");
+        throw new GraphQLError("unvalid password, please enter a valid one!");
       }
 
       const user = {
@@ -64,35 +67,64 @@ export default {
     deleteUser: async (
       parent: unknown,
       args: { id: "string" },
-      context: {}
+      context: { request: Request }
     ): Promise<User> => {
-      await prisma.post.deleteMany({ where: { authorId: args.id } });
+      let jwtPayload = getUserId(context.request);
 
-      await prisma.comment.deleteMany({ where: { userId: args.id } });
+      if (!jwtPayload)
+        throw new GraphQLError("unallowed action, please login !");
 
-      return await prisma.user.delete({ where: { id: args.id } });
+      const userToDelete = await prisma.user.findUnique({
+        where: { id: jwtPayload.userId },
+      });
+
+      if (!userToDelete) throw new GraphQLError("user does not exist !");
+
+      try {
+        // delete user's comments and posts
+        await prisma.comment.deleteMany({
+          where: { Post: { authorId: jwtPayload.userId } },
+        });
+        await prisma.post.deleteMany({
+          where: { authorId: jwtPayload.userId },
+        });
+        await prisma.comment.deleteMany({
+          where: { userId: jwtPayload.userId },
+        });
+
+        return await prisma.user.delete({ where: { id: jwtPayload.userId } });
+      } catch (err: unknown) {
+        throw new GraphQLError(
+          "something went wrong while deleting user, please try again"
+        );
+      }
     },
 
     updateUser: async (
       parent: unknown,
       args: UpdateUserInput,
-      context: {},
-      info: unknown
+      context: { request: Request }
     ): Promise<User> => {
-      const user = await prisma.user.findUnique({ where: { id: args.id } });
+      const jwtPayload = getUserId(context.request);
 
-      if (!user) throw new Error("user not found");
+      if (!jwtPayload) throw new GraphQLError("user please login !");
+
+      const user = await prisma.user.findUnique({
+        where: { id: jwtPayload.userId },
+      });
+
+      if (!user) throw new GraphQLError("user doesn't exist !");
 
       if (typeof args.data.email === "string") {
         const emailTaken = await prisma.user.findUnique({
           where: { email: args.data.email },
         });
 
-        if (emailTaken) throw new Error("email is taken");
+        if (emailTaken) throw new GraphQLError("email is taken");
       }
 
       await prisma.user.update({
-        where: { id: args.id },
+        where: { id: jwtPayload.userId },
         data: { name: args.data.name, email: args.data.email },
       });
 

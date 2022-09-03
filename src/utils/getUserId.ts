@@ -1,16 +1,24 @@
-import jwt, { Secret } from "jsonwebtoken";
+import { GraphQLError } from "graphql";
+import jwt, { JwtPayload, Secret } from "jsonwebtoken";
 
-export const getUserId = (request: Request) => {
-  const jwtToken =
+interface UserJwtToken extends JwtPayload {
+  userId: string;
+}
+
+export const getUserId = (request: Request): UserJwtToken | null => {
+  let jwtToken =
     request.headers.get("Authorization") ||
     request.headers.get("authorization");
 
-  if (!jwtToken) throw new Error("please sign in");
+  if (!jwtToken) throw new GraphQLError("unallowed action, please login !");
 
+  jwtToken = jwtToken.split(" ")[1];
   const secret: Secret = process.env.JWT_SECRET;
-  const decodedToken = jwt.verify(jwtToken, secret);
 
-  if (!decodedToken) throw new Error("please sign in");
-
-  return decodedToken;
+  try {
+    let userId = jwt.verify(jwtToken, secret) as UserJwtToken;
+    return userId;
+  } catch (err) {
+    return null;
+  }
 };
