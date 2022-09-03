@@ -20,7 +20,6 @@ type Mutation {
 
 input CreatePostInput {
   title: String!
-  author: String!
   content: String!
   published: Boolean!
 }

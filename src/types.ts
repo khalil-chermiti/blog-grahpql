@@ -50,7 +50,6 @@ export type UpdateUserInput = {
 export type PostInput = {
   postData: {
     title: string;
-    author: string;
     content: string;
     published: boolean;
   };
