@@ -1,5 +1,16 @@
 import jwt, { JwtPayload, Secret } from "jsonwebtoken";
 
+/*
+* this is the full Graphql-yoga context
+
+import { IncomingMessage, ServerResponse } from "http";
+import { YogaInitialContext } from "@graphql-yoga/node";
+interface Context extends YogaInitialContext {
+  req: IncomingMessage;
+  res: ServerResponse;
+}
+*/
+
 interface UserJwtToken extends JwtPayload {
   userId: string;
 }

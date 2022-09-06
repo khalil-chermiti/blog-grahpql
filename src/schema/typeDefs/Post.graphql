@@ -32,6 +32,7 @@ input UpdatePostInput {
 
 type Subscription {
   post: PostSubscritptionPayload
+  myPosts: PostSubscritptionPayload
 }
 
 type PostSubscritptionPayload {

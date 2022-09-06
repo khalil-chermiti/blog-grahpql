@@ -88,6 +88,7 @@ export type Database = {
 export type PubSubTypes = {
   post: [PostSubscriptionPayload];
   "postId:comment": [postId: string, comment: CommentSubscriptionPayload];
+  "userId:post": [userId: string, post: PostSubscriptionPayload];
 };
 
 export type PostSubscriptionPayload = {

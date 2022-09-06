@@ -13,6 +13,7 @@ import {
   PubSubTypes,
   PostSubscriptionPayload,
 } from "../../types";
+import { IncomingMessage } from "http";
 
 export default {
   Query: {
@@ -74,12 +75,16 @@ export default {
 
       const createdPost = await prisma.post.create({ data: post });
 
+      // publish post
+      const postPayload: PostSubscriptionPayload = {
+        mutation: "CREATED",
+        data: post,
+      };
+
       if (createdPost.published) {
-        context.pubSub.publish("post", {
-          mutation: "CREATED",
-          data: post,
-        });
+        context.pubSub.publish("post", postPayload);
       }
+      context.pubSub.publish("userId:post", jwtPayload.userId, postPayload);
 
       return post;
     },
@@ -102,11 +107,16 @@ export default {
         await prisma.post.delete({ where: { id: args.id } });
 
         // publish deletion if post is previously published
+
+        const postPayload: PostSubscriptionPayload = {
+          mutation: "DELETED",
+          data: postToDelete,
+        };
+
+        context.pubSub.publish("userId:post", jwtPayload.userId, postPayload);
+
         if (postToDelete.published) {
-          context.pubSub.publish("post", {
-            mutation: "DELETED",
-            data: postToDelete,
-          });
+          context.pubSub.publish("post", postPayload);
         }
 
         return postToDelete;
@@ -150,7 +160,7 @@ export default {
 
             context.pubSub.publish("post", {
               mutation: "DELETED",
-              data: originalPost, // return original data not the edited
+              data: postToUpdate,
             });
           } else if (!originalPost.published && postToUpdate.published) {
             // post is now published
@@ -167,6 +177,12 @@ export default {
           });
         }
 
+        // the author of the post should just know that the post got updated
+        context.pubSub.publish("userId:post", jwtPayload.userId, {
+          mutation: "UPDATED",
+          data: postToUpdate,
+        });
+
         // after publishing the update we save the new object to db
         return await prisma.post.update({
           where: { id: args.id },
@@ -179,6 +195,10 @@ export default {
   },
 
   Subscription: {
+    /**
+     * subscribe to all posts
+     * @returns PostSubscriptionPayload
+     */
     post: {
       subscribe: (
         parent: unknown,
@@ -187,6 +207,25 @@ export default {
       ): Repeater<PostSubscriptionPayload> => {
         return context.pubSub.subscribe("post");
       },
+      resolve: (payload: Post) => payload,
+    },
+
+    /**
+     * subscribe a user to its posts using its id from auth payload
+     * @returns PostSubscriptionPayload
+     */
+    myPosts: {
+      subscribe: (
+        parent: unknown,
+        args: { postId: string },
+        context: { pubSub: PubSub<PubSubTypes>; request: Request }
+      ): Repeater<PostSubscriptionPayload> => {
+        let jwtPayload = getUserId(context.request);
+        if (!jwtPayload) throw new GraphQLError("please sign in!");
+
+        return context.pubSub.subscribe("userId:post", jwtPayload.userId);
+      },
+
       resolve: (payload: Post) => payload,
     },
   },
