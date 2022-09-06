@@ -19,17 +19,31 @@ export default {
     getPosts: async (
       parent: unknown,
       args: { commentId: string },
-      context: {}
+      context: { request: Request }
     ): Promise<Post[]> => {
-      return await prisma.post.findMany({ take: 5 });
+      const jwtPayload = getUserId(context.request);
+
+      // return posts that are only published or created by logged in user
+      return await prisma.post.findMany({
+        where: { OR: [{ published: true }, { authorId: jwtPayload?.userId }] },
+        take: 5,
+      });
     },
 
     getPost: async (
       parent: unknown,
       args: { postId: string },
-      context: {}
+      context: { request: Request }
     ): Promise<Post | null> => {
-      return await prisma.post.findUnique({ where: { id: args.postId } });
+      const jwtPayload = getUserId(context.request);
+
+      // return post that is only published or created by logged in user
+      return await prisma.post.findFirst({
+        where: {
+          id: args.postId,
+          OR: [{ published: true }, { authorId: jwtPayload?.userId }],
+        },
+      });
     },
   },
 

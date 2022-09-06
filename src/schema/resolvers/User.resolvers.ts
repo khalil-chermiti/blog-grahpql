@@ -167,13 +167,28 @@ export default {
     },
   },
 
-  User: {
+  UserData: {
     posts: async (
       parent: { id: string },
       args: {},
-      context: {}
+      context: { request: Request }
     ): Promise<Post[]> => {
-      return await prisma.post.findMany({ where: { authorId: parent.id } });
+      const jwtPayload = getUserId(context.request);
+
+      console.table(jwtPayload);
+
+      // if user is authenticated return all of his posts
+      if (jwtPayload?.userId === parent.id) {
+        return await prisma.post.findMany({
+          where: { authorId: parent.id },
+          take: 5,
+        });
+      } else {
+        // return only published posts
+        return await prisma.post.findMany({
+          where: { authorId: parent.id, published: true },
+        });
+      }
     },
   },
 };
