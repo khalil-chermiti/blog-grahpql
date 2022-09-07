@@ -53,7 +53,9 @@ export default {
           name: user.name,
           email: user.email,
         },
-        token: jwt.sign({ userId: user.id }, process.env.JWT_SECRET),
+        token: jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
+          expiresIn: "2h",
+        }),
       };
     },
   },
@@ -95,7 +97,9 @@ export default {
 
       return {
         data: user,
-        token: jwt.sign({ userId: user.id }, process.env.JWT_SECRET),
+        token: jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
+          expiresIn: "2h",
+        }),
       };
     },
 
@@ -164,6 +168,45 @@ export default {
       });
 
       return user;
+    },
+
+    updatePassword: async (
+      parent: unknown,
+      args: { password: "string" },
+      context: { request: Request }
+    ): Promise<AuthPayload> => {
+      let jwtPayload = getUserId(context.request);
+
+      if (!jwtPayload)
+        throw new GraphQLError("not allowed action, please login !");
+
+      const user = await prisma.user.findUnique({
+        where: { id: jwtPayload.userId },
+      });
+
+      if (!user) throw new GraphQLError("user does not exist !");
+
+      if (args.password.length < 6 || typeof args.password !== "string") {
+        throw new GraphQLError("unvalid password, please enter a valid one!");
+      }
+
+      // hash password
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(args.password, salt);
+
+      prisma.user.update({
+        where: { id: jwtPayload.userId },
+        data: {
+          password: hashedPassword,
+        },
+      });
+
+      return {
+        data: user,
+        token: jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
+          expiresIn: "2h",
+        }),
+      };
     },
   },
 

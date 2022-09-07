@@ -15,6 +15,7 @@ type Mutation {
   createUser(userData: CreateUserInput): AuthPayload
   deleteUser: UserData
   updateUser(data: UpdateUserInput!): UserData
+  updatePassword(password: String!): AuthPayload
 }
 
 type AuthPayload {
