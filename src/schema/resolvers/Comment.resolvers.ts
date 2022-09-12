@@ -16,10 +16,24 @@ export default {
   Query: {
     getComments: async (
       parent: {},
-      args: {},
+      args: { skip: number; take: number; after: string },
       context: {}
     ): Promise<Comment[]> => {
-      return await prisma.comment.findMany({ take: 5 });
+      // if a cursor is not provided by client an error will be thrown
+      if (args.after) {
+        return await prisma.comment.findMany({
+          skip: args.skip || 0,
+          take: args.take || 5,
+          cursor: {
+            id: args.after,
+          },
+        });
+      } else {
+        return await prisma.comment.findMany({
+          skip: args.skip || 0,
+          take: args.take || 5,
+        });
+      }
     },
 
     getComment: async (

@@ -9,7 +9,7 @@ type Post {
 
 type Query {
   getPost(postId: String!): Post
-  getPosts: [Post]
+  getPosts(skip: Int, take: Int, after: String): [Post]
 }
 
 type Mutation {

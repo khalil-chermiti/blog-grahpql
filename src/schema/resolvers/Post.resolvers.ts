@@ -13,22 +13,39 @@ import {
   PubSubTypes,
   PostSubscriptionPayload,
 } from "../../types";
-import { IncomingMessage } from "http";
 
 export default {
   Query: {
     getPosts: async (
       parent: unknown,
-      args: { commentId: string },
+      args: { skip: number; take: number; after: string },
       context: { request: Request }
     ): Promise<Post[]> => {
       const jwtPayload = getUserId(context.request);
 
-      // return posts that are only published or created by logged in user
-      return await prisma.post.findMany({
-        where: { OR: [{ published: true }, { authorId: jwtPayload?.userId }] },
-        take: 5,
-      });
+      // if a cursor is not provided by client an error will be thrown
+      if (args.after) {
+        return await prisma.post.findMany({
+          // return posts that are either published or created by logged in user
+          where: {
+            OR: [{ published: true }, { authorId: jwtPayload?.userId }],
+          },
+          take: args.take || 5,
+          skip: args.skip || 0,
+          cursor: {
+            id: args.after,
+          },
+        });
+      } else {
+        return await prisma.post.findMany({
+          // return posts that are either published or created by logged in user
+          where: {
+            OR: [{ published: true }, { authorId: jwtPayload?.userId }],
+          },
+          take: args.take || 5,
+          skip: args.skip || 0,
+        });
+      }
     },
 
     getPost: async (
